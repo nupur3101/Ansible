@@ -1,0 +1,65 @@
+
+---
+- hosts: all
+  vars_prompt:
+    - name: doc_root
+      prompt: "Enter folder to make document root for Apache Web server"
+      private: no
+
+  tasks:
+
+  - name: "To make mount point for dvd"
+    file:
+      state: directory
+      path: "/dvd"  
+
+  - name: "To mount dvd"
+    mount: 
+      src: "/dev/cdrom"
+      path: "/dvd"
+      state: mounted
+      fstype: "iso9660"
+
+  - name: "To configure yum AppStream"
+    yum_repository:
+      baseurl: "/dvd/AppStream"
+      name: "AppStream"
+      description: "Repository 1"
+      gpgcheck: no
+
+  - name: "To configure yum BaseOS"
+    yum_repository:
+      baseurl: "/dvd/BaseOS"
+      name: "BaseOS"
+      description: "Repository 2"
+      gpgcheck: no
+
+  - name: "To install http software"
+    package:
+      name: "httpd"
+      state: present
+
+  - name: "To make folder for document root"
+    file:
+      path: "/var/www/{{ doc_root }}"
+      state: directory
+
+  - name: "To copy content into Document Root"
+    template:
+      src: "apache.conf"
+      dest: "/var/www/{{ doc_root }}/web.conf"
+    notify:
+    - Restart Apache
+     
+  - name: "To start Apache Web Server"
+    service: 
+      name: "httpd"
+      state: started
+      enabled: yes 
+                    
+  handlers:
+  - name: Restart Apache
+    service:
+       name: httpd
+       state: restarted
+ 
