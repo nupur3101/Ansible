@@ -1,0 +1,91 @@
+# Task 11.1 Configure hadoop and start cluster services using Ansible Playbook.
+
+---
+- hosts: all
+  tasks:
+  
+  - name: Copying java package
+    copy: 
+      src: "/jdk-8u171-linux-x64.rpm"
+      dest: "/root/"
+
+  - name: Installing jdk
+    command: "rpm -ivh jdk-8u171-linux-x64.rpm"
+    ignore_errors: yes
+
+  - name: Copying hadoop package
+    copy:
+      src: "/hadoop-1.2.1-1.x86_64.rpm"
+      dest: "/root/"
+
+  - name: Installing hadoop
+    command: "rpm -ivh --force hadoop-1.2.1-1.x86_64.rpm"
+    ignore_errors: yes
+
+
+# Configuring hadoop namenode
+
+- hosts: namenode
+  vars_prompt:
+  - name: name_dir
+    prompt: "Enter name for namenode directory : "
+    private: no
+
+  tasks:
+
+  - name: Creating namenode directory
+    file:
+      state: directory
+      path: "/{{ name_dir }}" 
+ 
+  - name: Copying hdfs-site.xml file
+    template: 
+      src: "namenode_hdfs.xml"
+      dest: "/etc/hadoop/hdfs-site.xml" 
+ 
+  - name: Copying core-site.xml file
+    template: 
+      src: "core-site.xml"
+      dest: "/etc/hadoop/core-site.xml" 
+   
+  - name: Formatting namenode
+    shell: "echo Y | hadoop namenode -format"
+
+  - name: Stopping namenode
+    shell: "hadoop-daemon.sh stop namenode"
+
+  - name: Starting namenode services
+    shell: "hadoop-daemon.sh start namenode"
+
+
+# Configuring hadoop datanode
+
+- hosts: datanode
+  vars_prompt:
+  - name: data_dir
+    prompt: "Enter name for datanode directory : "
+    private: no
+
+  tasks:
+
+  - name: Creating datanode directory
+    file:
+      state: directory
+      path: "/{{ data_dir }}" 
+ 
+  - name: Copying hdfs-site.xml file
+    template: 
+      src: "data_hdfs.xml"
+      dest: "/etc/hadoop/hdfs-site.xml" 
+ 
+  - name: Copying core-site.xml file
+    template: 
+      src: "core-site.xml"
+      dest: "/etc/hadoop/core-site.xml" 
+
+  - name: stopping datanode
+    shell: "hadoop-daemon.sh stop datanode"
+
+  - name: Starting datanode services
+    shell: "hadoop-daemon.sh start datanode"
+
